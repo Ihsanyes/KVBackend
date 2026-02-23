@@ -86,3 +86,19 @@ class EmployeeIdSequence(models.Model):
     def __str__(self):
         return str(self.last_number)
     
+class ModulePermission(models.Model):
+    MODULE_CHOICES = [
+        ('employee_management', 'Employee Management'),
+        ('reporting', 'Reporting'),
+        ('settings', 'Settings'),
+        ('inventory', 'Inventory Management'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='module_permissions')
+    module_name = models.CharField(max_length=50, choices=MODULE_CHOICES)
+
+    class Meta:
+        unique_together = ('user', 'module_name')
+
+    def __str__(self):
+        return f"{self.user.employee_id} - {self.module_name}"
