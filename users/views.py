@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-
+from .permission import HasModulePermission, IsAdminOrSuperUser
+from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from datetime import timedelta
 
@@ -74,10 +76,10 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-class CreateEmployeeView(APIView):
+class CreateListEmployeeView(APIView):
 
     def post(self, request):
-        serializer = EmployeeCreateSerializer(data=request.data)
+        serializer = EmployeeSerializer(data=request.data)
 
         if serializer.is_valid():
             user = serializer.save()
@@ -89,6 +91,15 @@ class CreateEmployeeView(APIView):
             }, status=201)
 
         return Response(serializer.errors, status=400)
+    
+    def get(self, request):
+        employees = User.objects.all()
+        serializer = EmployeeSerializer(employees, many=True)
+
+        return Response({
+            "status": "1",
+            "employees": serializer.data
+        }, status=200)
     
 
 
@@ -110,3 +121,19 @@ class PreviewEmployeeIdView(APIView):
             "status": "1",
             "employee_id": employee_id
         })
+    
+class AssignPermissionView(generics.CreateAPIView):
+    serializer_class = AssignPermissionSerializer
+    permission_classes = [IsAdminOrSuperUser]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        return Response({
+            "status": "1",
+            "message": "Permissions assigned successfully",
+            "user_id": user.id
+        }, status=201)
