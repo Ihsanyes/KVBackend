@@ -11,34 +11,35 @@ class UserManager(BaseUserManager):
         if not pin:
             raise ValueError("PIN is required")
 
-        # Enforce 6 digit PIN
         if not pin.isdigit() or len(pin) != 6:
             raise ValueError("PIN must be exactly 6 digits")
-        
+
         if not employee_id:
             employee_id = generate_employee_id()
 
-        employee_id = employee_id.upper()  # normalize
+        employee_id = employee_id.upper()
 
         user = self.model(employee_id=employee_id, role=role, **extra_fields)
-        user.set_password(pin)  # hashed PIN
+        user.set_password(pin)
         user.save(using=self._db)
         return user
+    
+    def create_superuser(self, employee_id, password=None, **extra_fields):
+        pin = password # password is used as PIN
 
-    def create_superuser(self, employee_id, pin=None, **extra_fields):
-        
         if not pin:
             raise ValueError("Superuser must have a PIN")
-        
+
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True')
+        
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True')
-
-        return self.create_user(employee_id, pin, role='admin', **extra_fields)
+        
+        return self.create_user(employee_id=employee_id, pin=pin, role='admin', **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -84,3 +85,4 @@ class EmployeeIdSequence(models.Model):
 
     def __str__(self):
         return str(self.last_number)
+    
