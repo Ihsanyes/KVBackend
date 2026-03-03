@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .permission import HasModulePermission, IsAdminOrSuperUser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.utils import timezone
 from datetime import timedelta
 
@@ -16,6 +16,8 @@ from .models import *
 
 
 class LoginView(APIView):
+
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = LoginSerializer(data = request.data)
@@ -48,7 +50,8 @@ class LoginView(APIView):
                         "access": str(refresh.access_token),
                         "id": user.id,
                         "employee_id": user.employee_id,
-                        "role": user.role
+                        "role": user.role,
+                        "permission_modules": [perm.module_name for perm in user.module_permissions.all()]
                     }, status=status.HTTP_200_OK)
                 else:
                     # Increment failed attempts

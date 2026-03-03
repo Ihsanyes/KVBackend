@@ -16,12 +16,14 @@ class ModulePermissionSerializer(serializers.ModelSerializer):
 
 class EmployeeSerializer(serializers.ModelSerializer):
     pin = serializers.CharField(write_only=True)
+
+    employee_id = serializers.CharField(read_only=True)
     module_permissions = ModulePermissionSerializer(many=True, read_only=True)
 
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'pin', 'role', 'phone', 'email', 'module_permissions']
+        fields = ['id', 'first_name', 'last_name', 'employee_id',  'pin', 'role', 'phone', 'email', 'module_permissions']
     
     def validate(self, data):
         if not data.get('first_name'):
