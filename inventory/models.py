@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 
 class Brand(models.Model):
-    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, db_index=True)
+    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -17,7 +17,7 @@ class Brand(models.Model):
     
     
 class Category(models.Model):
-    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, db_index=True)
+    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -30,7 +30,7 @@ class Category(models.Model):
         return self.name
     
 class VehicleBrand(models.Model):
-    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, db_index=True)
+    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     name = models.CharField(max_length=255)
 
     class Meta:
@@ -41,7 +41,7 @@ class VehicleBrand(models.Model):
 
 
 class VehicleModel(models.Model):
-    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, db_index=True)
+    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE)
     model_name = models.CharField(max_length=255)
 
@@ -52,7 +52,7 @@ class VehicleModel(models.Model):
         return f"{self.brand.name} {self.model_name}"
 
 class Product(models.Model):
-    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, db_index=True)
+    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     name = models.CharField(max_length=255)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="products")
     description = models.TextField(blank=True, null=True)

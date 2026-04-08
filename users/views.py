@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .permission import HasModulePermission, IsAdminOrSuperUser
+from .permission import HasModulePermission, IsOwnerOrSuperUser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.utils import timezone
 from datetime import timedelta
@@ -100,7 +100,10 @@ class LoginView(APIView):
 class CreateListEmployeeView(APIView):
 
     def post(self, request):
-        serializer = EmployeeSerializer(data=request.data)
+        serializer = EmployeeSerializer(
+            data=request.data,
+            context={"workshop": getattr(request.user, "workshop", None)},
+        )
 
         if serializer.is_valid():
             user = serializer.save()
@@ -186,7 +189,7 @@ class PreviewEmployeeIdView(APIView):
     
 class AssignPermissionView(generics.CreateAPIView):
     serializer_class = AssignPermissionSerializer
-    permission_classes = [IsAdminOrSuperUser]
+    permission_classes = [IsOwnerOrSuperUser]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -279,6 +282,13 @@ class WorkshopView(APIView):
             }, status=404)
 
         workshop = user.workshop
+
+        if workshop.owner_id != user.id:
+            return Response({
+                "status": "0",
+                "message": "Only workshop owner can update workshop data"
+            }, status=status.HTTP_403_FORBIDDEN)
+
         serializer = WorkshopSerializer(workshop, data=request.data, partial=True)
 
         if serializer.is_valid():
@@ -293,4 +303,22 @@ class WorkshopView(APIView):
             "status": "0",
             "errors": serializer.errors
         }, status=400)
-    
+
+
+class UserPreferenceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        pref, _ = UserPreference.objects.get_or_create(user=request.user)
+        serializer = UserPreferenceSerializer(pref)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        pref, _ = UserPreference.objects.get_or_create(user=request.user)
+        serializer = UserPreferenceSerializer(pref, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

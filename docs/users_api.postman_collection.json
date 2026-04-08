@@ -1,0 +1,252 @@
+{
+  "info": {
+    "_postman_id": "0f7277d7-8fb1-4fb5-b59a-7f5bc1326a57",
+    "name": "Workshop Backend - Users APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "employee_pk",
+      "value": "1"
+    },
+    {
+      "key": "target_user_id",
+      "value": "2"
+    }
+  ],
+  "item": [
+    {
+      "name": "Register Workshop + Owner",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workshop_name\": \"ABC Workshop\",\n  \"workshop_phone\": \"9998887776\",\n  \"workshop_email\": \"abcworkshop@example.com\",\n  \"workshop_address\": \"Kochi\",\n  \"first_name\": \"Owner\",\n  \"last_name\": \"One\",\n  \"phone\": \"9998887777\",\n  \"pin\": \"123456\"\n}"
+        },
+        "url": "{{base_url}}/api/register/"
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employee_id\": \"W1EMP0001\",\n  \"pin\": \"123456\"\n}"
+        },
+        "url": "{{base_url}}/api/login/"
+      }
+    },
+    {
+      "name": "Create Employee (Staff)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Staff\",\n  \"last_name\": \"User\",\n  \"phone\": \"9998887778\",\n  \"email\": \"staff@example.com\",\n  \"pin\": \"123456\",\n  \"role\": \"staff\"\n}"
+        },
+        "url": "{{base_url}}/api/employee/"
+      }
+    },
+    {
+      "name": "List Employees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/employee/"
+      }
+    },
+    {
+      "name": "Get Employee By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/employee/{{employee_pk}}/"
+      }
+    },
+    {
+      "name": "Update Employee (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Updated\",\n  \"email\": \"updated@example.com\"\n}"
+        },
+        "url": "{{base_url}}/api/employee/{{employee_pk}}/"
+      }
+    },
+    {
+      "name": "Preview Employee ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/preview-employee-id/"
+      }
+    },
+    {
+      "name": "Assign Permissions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": {{target_user_id}},\n  \"modules\": [\n    \"employee_management\",\n    \"inventory\"\n  ]\n}"
+        },
+        "url": "{{base_url}}/api/assign-permission/"
+      }
+    },
+    {
+      "name": "Get Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/profile/"
+      }
+    },
+    {
+      "name": "Update Profile (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"OwnerUpdated\",\n  \"phone\": \"9998887790\"\n}"
+        },
+        "url": "{{base_url}}/api/profile/"
+      }
+    },
+    {
+      "name": "Reset PIN",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"old_pin\": \"123456\",\n  \"new_pin\": \"654321\"\n}"
+        },
+        "url": "{{base_url}}/api/pin-reset/"
+      }
+    },
+    {
+      "name": "Get Workshop",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/workshop/"
+      }
+    },
+    {
+      "name": "Update Workshop (Owner Only)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"ABC Workshop Updated\",\n  \"address\": \"Ernakulam\"\n}"
+        },
+        "url": "{{base_url}}/api/workshop/"
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@ from .models import ModulePermission
 class HasModulePermission(BasePermission):
 
     def has_permission(self, request, view):
-        if request.user.is_superuser or request.user.role == 'admin':
+        if request.user.is_superuser or request.user.role == 'owner':
             return True
 
         required_module = getattr(view, 'required_module', None)
@@ -21,7 +21,12 @@ class HasModulePermission(BasePermission):
         return has_perm
     
 
-class IsAdminOrSuperUser(BasePermission):
+class IsOwnerOrSuperUser(BasePermission):
 
     def has_permission(self, request, view):
-        return request.user.is_superuser or request.user.role == 'admin'
+        return request.user.is_superuser or request.user.role == 'owner'
+
+
+# Backward compatibility for old imports.
+class IsAdminOrSuperUser(IsOwnerOrSuperUser):
+    pass

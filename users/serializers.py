@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from users.models import User, ModulePermission, Workshop
+from users.models import *
 from django.db import transaction
 
 class RegisterSerializer(serializers.Serializer):
@@ -21,6 +21,9 @@ class RegisterSerializer(serializers.Serializer):
         return value
     
     def validate(self, validated_data):
+        if Workshop.objects.filter(phone=validated_data['workshop_phone']).exists():
+            raise serializers.ValidationError("Workshop phone already exists")
+
         if User.objects.filter(phone=validated_data['phone']).exists():
             raise serializers.ValidationError("Phone number already exists")
         return validated_data
@@ -39,11 +42,11 @@ class RegisterSerializer(serializers.Serializer):
                 address=validated_data['workshop_address']
             )
 
-            # 2. Create owner (admin)
+            # 2. Create owner
             user = User.objects.create_user(
                 workshop=workshop,
                 pin=validated_data['pin'],
-                role='admin',
+                role='owner',
                 first_name=validated_data['first_name'],
                 last_name=validated_data['last_name'],
                 phone=validated_data['phone']
@@ -77,6 +80,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = ['id', 'first_name', 'last_name', 'employee_id',  'pin', 'role', 'phone', 'email', 'module_permissions']
     
     def validate(self, data):
+        if self.instance is None and not self.context.get('workshop'):
+            raise serializers.ValidationError("Workshop is required")
+
         if not data.get('first_name'):
             raise serializers.ValidationError("First name is required")
 
@@ -95,6 +101,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
         if not value.isdigit() or len(value) != 6:
             raise serializers.ValidationError("PIN must be exactly 6 digits")
         return value
+    
+    def validate_role(self, value):
+        if value != 'staff':
+            raise serializers.ValidationError("Only staff role can be created here")
+        return value
 
     def validate_phone(self, value):
         if not value.isdigit():
@@ -107,11 +118,21 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         pin = validated_data.pop('pin')
+        role = validated_data.pop('role', 'staff')
+        workshop = self.context.get('workshop')
 
-        user = User.objects.create_user(
-            pin=pin,
-            **validated_data
-        )
+        if not workshop:
+            raise serializers.ValidationError("Workshop is required")
+
+        try:
+            user = User.objects.create_user(
+                workshop=workshop,
+                pin=pin,
+                role=role,
+                **validated_data
+            )
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
 
         return user
 
@@ -228,3 +249,9 @@ class WorkshopSerializer(serializers.ModelSerializer):
         if obj.owner:
             return obj.owner.get_full_name()
         return None
+    
+
+class UserPreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPreference
+        fields = ["theme", "notifications", "default_view"]

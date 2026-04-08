@@ -34,6 +34,9 @@ class UserManager(BaseUserManager):
 
         if not pin.isdigit() or len(pin) != 6:
             raise ValueError("PIN must be exactly 6 digits")
+        
+        if role == 'owner' and self.filter(workshop=workshop, role='owner').exists():
+            raise ValueError("This workshop already has an owner")
 
         if not employee_id:
             employee_id = generate_employee_id(workshop=workshop)
@@ -65,7 +68,7 @@ class UserManager(BaseUserManager):
 
         user = self.model(
             employee_id=employee_id.upper(),
-            role='admin',
+            role='owner',
             workshop=None,  # 👈 IMPORTANT
             **extra_fields
         )
@@ -85,7 +88,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     ROLE_CHOICES = [
-        ('admin', 'Admin'),
+        ('owner', 'Owner'),
         ('staff', 'Staff'),
     ]
     employee_id = models.CharField(max_length=30, unique=True, db_index=True)
@@ -116,10 +119,17 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=['workshop']),
             models.Index(fields=['employee_id']),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['workshop'],
+                condition=models.Q(role='owner', workshop__isnull=False),
+                name='unique_owner_per_workshop',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
-        # Ensure admin has staff access
-        if self.role == 'admin':
+        # Ensure owners can access admin screens.
+        if self.role == 'owner' or self.is_superuser:
             self.is_staff = True
         super().save(*args, **kwargs)
 
@@ -153,3 +163,26 @@ class ModulePermission(models.Model):
 
     def __str__(self):
         return f"{self.user.employee_id} - {self.module_name}"
+
+
+class UserPreference(models.Model):
+    THEME_CHOICES = [
+        ("light", "Light"),
+        ("dark", "Dark"),
+    ]
+
+    user = models.OneToOneField(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="preferences"
+    )
+
+    theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="dark")
+    notifications = models.BooleanField(default=True)
+    default_view = models.CharField(max_length=50, default="dashboard")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user} Preferences"

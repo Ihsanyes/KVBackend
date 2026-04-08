@@ -12,6 +12,5 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user_profile'),
     path('pin-reset/', PinResetView.as_view(), name='pin_reset'),
     path('workshop/', WorkshopView.as_view(), name='workshop'),
-    # path('workshop/<int:pk>/', WorkshopDetailView.as_view(), name='workshop_detail'),
-
-]
+    path("preferences/", UserPreferenceView.as_view(), name="user_preferences"),
+]                       
