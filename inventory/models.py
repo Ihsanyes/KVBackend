@@ -1,8 +1,3 @@
-"""
-App: inventory
-Depends on: users
-"""
-
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
@@ -36,6 +31,36 @@ class Category(models.Model):
         return self.name
 
 
+class VehicleBrand(models.Model):
+    workshop = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
+    name     = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ['name', 'workshop']
+
+    def __str__(self):
+        return self.name
+
+
+class VehicleModel(models.Model):
+    VEHICLE_TYPE_CHOICES = [
+        ('2W', 'Two Wheeler'),
+        ('3W', 'Three Wheeler'),
+        ('4W', 'Four Wheeler'),
+        ('HV', 'Heavy Vehicle'),
+    ]
+    workshop     = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
+    brand        = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE, related_name='models')
+    model_name   = models.CharField(max_length=255)
+    vehicle_type = models.CharField(max_length=2, choices=VEHICLE_TYPE_CHOICES, default='2W')
+
+    class Meta:
+        unique_together = ['brand', 'model_name', 'workshop']
+
+    def __str__(self):
+        return f"{self.brand.name} {self.model_name}"
+
+
 class Product(models.Model):
     workshop    = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     name        = models.CharField(max_length=255)
@@ -62,7 +87,7 @@ class ProductVariant(models.Model):
     barcode             = models.CharField(max_length=100, blank=True, null=True)
     cost_price          = models.DecimalField(max_digits=10, decimal_places=2)
     selling_price       = models.DecimalField(max_digits=10, decimal_places=2)
-    compatible_vehicles = models.ManyToManyField('vehicles.VehicleModel', blank=True)
+    compatible_vehicles = models.ManyToManyField(VehicleModel, blank=True)
     is_active           = models.BooleanField(default=True)
     created_at          = models.DateTimeField(auto_now_add=True)
 
@@ -178,8 +203,39 @@ class PurchaseOrderItem(models.Model):
         return f"{self.product_variant} | {self.ordered_qty} ordered"
 
 
+class StockMovement(models.Model):
+    class MovementType(models.TextChoices):
+        PURCHASE   = 'PURCHASE',   'Purchase / GRN'
+        JOB_ISSUE  = 'JOB_ISSUE',  'Issued to Job'
+        JOB_RETURN = 'JOB_RETURN', 'Returned from Job'
+        SUP_RETURN = 'SUP_RETURN', 'Returned to Supplier'
+        ADJUSTMENT = 'ADJUSTMENT', 'Manual Adjustment'
+        SCRAP      = 'SCRAP',      'Scrap / Write-off'
+
+    workshop        = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, db_index=True, related_name='stock_movements')
+    product_variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, related_name='movements')
+    movement_type   = models.CharField(max_length=20, choices=MovementType.choices)
+    quantity        = models.IntegerField()
+    unit_cost       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    purchase_order  = models.ForeignKey(PurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_movements')
+    job_card_id     = models.PositiveIntegerField(null=True, blank=True)
+    reference_note  = models.CharField(max_length=255, blank=True)
+    moved_by        = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='stock_movements')
+    moved_at        = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-moved_at']
+        indexes  = [
+            models.Index(fields=['workshop', 'product_variant']),
+            models.Index(fields=['workshop', 'movement_type']),
+        ]
+
+    def __str__(self):
+        d = '▲ IN' if self.quantity > 0 else '▼ OUT'
+        return f"{d} {abs(self.quantity)} × {self.product_variant} [{self.movement_type}]"
+
+
 class PriceHistory(models.Model):
-    """Auto-created by signal when ProductVariant prices change."""
     workshop          = models.ForeignKey('users.Workshop', on_delete=models.CASCADE, db_index=True)
     product_variant   = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name='price_history')
     old_cost_price    = models.DecimalField(max_digits=10, decimal_places=2)
