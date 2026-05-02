@@ -5,9 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from users.permission import IsOwnerOrSuperUser
 from inventory.models import (
     Brand, Category,
-    VehicleBrand, VehicleModel,
     Product, ProductVariant,
-    Stock, StockAlert, StockMovement,
+    Stock, StockAlert,
     Supplier, PurchaseOrder, PriceHistory,
 )
 from inventory.serializers import (
@@ -20,6 +19,8 @@ from inventory.serializers import (
     PriceHistorySerializer,
 )
 from inventory.services.services import apply_grn, apply_stock_adjustment
+from jobs.models import StockMovement
+from vehicles.models import VehicleBrand, VehicleModel
 
 
 def ws(request):

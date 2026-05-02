@@ -18,7 +18,8 @@ def apply_grn(purchase_order, items_data, received_by):
       - Update Stock.quantity
       - Update PurchaseOrder.status
     """
-    from inventory.models import PurchaseOrderItem, Stock, StockMovement
+    from inventory.models import PurchaseOrderItem, Stock
+    from jobs.models import StockMovement
  
     with transaction.atomic():
         all_fully_received = True
@@ -82,7 +83,8 @@ def apply_stock_adjustment(workshop, product_variant, quantity, reason, moved_by
     Manual stock adjustment.
     quantity > 0 = add, quantity < 0 = remove
     """
-    from inventory.models import Stock, StockMovement
+    from inventory.models import Stock
+    from jobs.models import StockMovement
  
     with transaction.atomic():
         stock, _ = Stock.objects.select_for_update().get_or_create(

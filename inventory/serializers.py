@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from inventory.models import (
     Brand, Category,
-    VehicleBrand, VehicleModel,
     Product, ProductVariant,
-    Stock, StockAlert, StockMovement,
+    Stock, StockAlert,
     Supplier, PurchaseOrder, PurchaseOrderItem,
     PriceHistory,
 )
+from jobs.models import StockMovement
+from vehicles.models import VehicleBrand, VehicleModel
 
 
 # ── Brand ─────────────────────────────────────────────────────

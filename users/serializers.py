@@ -2,61 +2,82 @@ from rest_framework import serializers
 from users.models import *
 from django.db import transaction
 
+
 class RegisterSerializer(serializers.Serializer):
     # Workshop fields
-    workshop_name = serializers.CharField(max_length=255)
-    workshop_phone = serializers.CharField(max_length=15)
-    workshop_email = serializers.EmailField()
+    workshop_name    = serializers.CharField(max_length=255)
+    workshop_phone   = serializers.CharField(max_length=15)
+    workshop_email   = serializers.EmailField()
     workshop_address = serializers.CharField()
+
+    # Vehicle type capabilities
+    serves_two_wheeler   = serializers.BooleanField(default=False)
+    serves_three_wheeler = serializers.BooleanField(default=False)
+    serves_four_wheeler  = serializers.BooleanField(default=False)
+    serves_heavy_vehicle = serializers.BooleanField(default=False)
 
     # Owner fields
     first_name = serializers.CharField(max_length=30)
-    last_name = serializers.CharField(max_length=30)
-    phone = serializers.CharField(max_length=15)
-    pin = serializers.CharField(write_only=True)
+    last_name  = serializers.CharField(max_length=30)
+    phone      = serializers.CharField(max_length=15)
+    pin        = serializers.CharField(write_only=True)
 
     def validate_pin(self, value):
         if not value.isdigit() or len(value) != 6:
             raise serializers.ValidationError("PIN must be 6 digits")
         return value
-    
+
     def validate(self, validated_data):
         if Workshop.objects.filter(phone=validated_data['workshop_phone']).exists():
             raise serializers.ValidationError("Workshop phone already exists")
-
         if User.objects.filter(phone=validated_data['phone']).exists():
             raise serializers.ValidationError("Phone number already exists")
+
+        # At least one vehicle type must be true
+        serves_any = any([
+            validated_data.get('serves_two_wheeler'),
+            validated_data.get('serves_three_wheeler'),
+            validated_data.get('serves_four_wheeler'),
+            validated_data.get('serves_heavy_vehicle'),
+        ])
+        if not serves_any:
+            raise serializers.ValidationError(
+                "At least one vehicle type must be selected"
+            )
+
         return validated_data
-    
-
-
 
     def create(self, validated_data):
         with transaction.atomic():
 
-            # 1. Create workshop
+            # 1. Create workshop (with vehicle types)
             workshop = Workshop.objects.create(
-                name=validated_data['workshop_name'],
-                phone=validated_data['workshop_phone'],
-                email=validated_data['workshop_email'],
-                address=validated_data['workshop_address']
+                name                 = validated_data['workshop_name'],
+                phone                = validated_data['workshop_phone'],
+                email                = validated_data['workshop_email'],
+                address              = validated_data['workshop_address'],
+                serves_two_wheeler   = validated_data.get('serves_two_wheeler', False),
+                serves_three_wheeler = validated_data.get('serves_three_wheeler', False),
+                serves_four_wheeler  = validated_data.get('serves_four_wheeler', False),
+                serves_heavy_vehicle = validated_data.get('serves_heavy_vehicle', False),
             )
 
             # 2. Create owner
             user = User.objects.create_user(
-                workshop=workshop,
-                pin=validated_data['pin'],
-                role='owner',
-                first_name=validated_data['first_name'],
-                last_name=validated_data['last_name'],
-                phone=validated_data['phone']
+                workshop   = workshop,
+                pin        = validated_data['pin'],
+                role       = 'owner',
+                first_name = validated_data['first_name'],
+                last_name  = validated_data['last_name'],
+                phone      = validated_data['phone'],
             )
 
-            # 3. Assign owner
+            # 3. Assign owner to workshop
             workshop.owner = user
             workshop.save()
 
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     employee_id = serializers.CharField(max_length=100)
